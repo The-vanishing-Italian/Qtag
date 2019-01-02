@@ -1,0 +1,355 @@
+q t a g ,    a    s e a r c h    t o o l     f o r     H U M A N S
+
+by Alberto Emiliani
+02 Jan 2018
+
+This file is best viewed in full screen
+
+****************
+* 1. Quick start *
+****************
+qtag is a tool for quick file searching based on tags in the file names. It can create a directory of symlinks to the found files and open it in the file manager, it can mass change the filenames adding or removing tags etc.
+
+The idea behind qtag is that a search tool for humans should be based on the way humans write file names.
+If filenames were contrived by computers, they would all be like "SW234GFH5552" and tags would be of little help. But humans normally use WORDS (shortened or not)separated from one another in ways that are not always consistent. Both the name shortening and the separators we use (spaces, underscores, dots, sometimes just upper case letters) may vary.
+A search tool for humans should assume that one is mostly searching for words or word-beginnings -- giving one also the possibility of searching within words, but making the search for words and word-beginnings ("tags") very handy.
+
+Let's try it. Just open a terminal and write
+
+	[path]qtag.py pyth phil			(you can in fact turn it into a command and then you just write qtag instead of [path]qtag.py -- see below)
+
+It will find all files and directories, starting from the current directory, whose name contains the tag "pyth" AND the tag "phil", such as:
+
+	Philosophy_of_Python
+	PhilOfPython
+	Philosophy of Python
+	python and C philosophy
+	programming philosophy in python
+	Pythagoras_in_the_history_of_philosophical_thought
+
+and so on. (By using the options you can set a search path, case sensitive search etc. etc.: see below.)
+qtag is actually much more powerful than this, but this may be enough for a beginning. You can tell qtag to write symbolic links to all the found files and directories and to open the list in your file manager. Just write:
+
+	qtag pyth phil -w			(this is for "write")
+
+and it will open your browser on a working directory filled with links to the found files, allowing you to explore them closely (e.g. by opening them).
+WARNING: this is just for viewing and exploring; deleting or moving the files in the directory will only delete or move the links. 
+
+Depending on where you saved your copy of qtag, you have to follow the usual Linux syntax for executing it, e.g.:
+
+	./qtag.py [...]
+	python3.5 [path]qtag.py [...]
+
+Even better: if, after a few tries, you decide you want to have qtag in your set of commands, qtag tries to do this for you. Write:
+
+	[path]qtag.py -x
+
+A copy of qtag (without the py) will be saved in your .local/bin. PROVIDED THAT <Home>.local/bin is in your PATH, it will now be enough to type "qtag" instead of bothering with the whole path etc. If, on the other hand, <Home>.local/bin is NOT in your PATH (just check from terminal with "echo $PATH") you can either change your path or manually copy your qtag.py to a location that IS present in your PATH. Copy it to filename "qtag" if you want to reduce the typing. E.g.:
+
+	cp   Downloads/qtag.py   My_Path_Dir/qtag
+
+
+SOME  (BORING) REMARKS  ON  SYMLINKS  IN   THE   WORKING   DIRECTORY
+Browsing through your found files is convenient, but you might have files with the same name (I mean, their bare name stripped of the path, or "base name") in different searched directories. In this case, you would have two symlinks with the same name -- which is an error. qtag solves the problem changing the name of the link: it issues a warning and adds a dot at the end of the linkname. No change is made to the original file. All these links in fact point to different files.
+Another possibility is that another search, made with "-a" active, tries to add to your working dir links to files that are already linked to in it. In this case, qtag issues a warning about a duplicate link and skips over the new link -- bacause you already have it. But think of this case: qtag already passed through the ordeal above, and added one dot, then two dots, to links to DIFFERENT files that have the SAME name. Then you issue another qtag command with "-a" and qtag, say, finds again a match with the file whose link is already present, with two trailing dots, in your working dir. It tries to add a link to it, but it finds another link with the same name. It checks: is this a duplicate link, pointing to the same file? No -- there is in fact a link pointing to the same file but it has has two dots at the end of its name. Therefore, it adds a dot and restarts the check; the same story happens. It retries with two dots: and THIS time it finds out that you already have a link pointing to the same target. And so, it eventually tells you that it is ignoring the link. And all ends well; but you get a good amount of warnings.  -- Cases like this are quite unusual, though.
+
+***************************
+* 2. Advanced search             *
+***************************
+
+*NOT*
+You may wish to search for a certain combination of tags that excludes some tags/words. A colon just before a word (without spaces) means "not".
+
+	qtag ari :metaph
+
+finds all the ari-matches that do not contain the tag "metaph" at the beginning of a word (that is after space underscore dot etc.). It's that easy.
+
+
+
+*WILDCARDS, OR SEARCHES AND REGEXes*
+A dot means any single character in a tag.
+
+	qtag li.e
+
+("li.e" is a single tag; to add more tags just type a space) finds "line", "like", etc.
+An asterisk finds zero or more of the last character: it's especially useful after a dot, to indicate any sequence of characters. In this way, it's easy to search for a string (also) in the middle of a word:
+
+	qtag  .*rage
+
+would find "rage", "storage", etc. ".*" more or less works as a "*" elsewhere does.
+(To find an actual dot or asterisk you have to write it after a double backslash, or with quotes around the tag:
+
+	qtag blah\\.
+
+searches for filenames containing words beginning with "blah."  See also below, *SPECIAL CHARACTERS*)
+Say, you want to find "metaphysics" but also "metafisica". You don't want to write just "meta" because you have thousand of files about metamorphosis.
+
+qtag metaph metaf
+
+would NOT be what you want, because it would find all the files that contain BOTH the tags metaph AND metaf. What you need is an OR search, which isn't the primary goal of qtag but can be done in some different ways.
+The easiest way for performing OR searches is to use qtag repeatedly: the first time with the option -w, then with the option -a. This would append new links to the working directory (where symlinks to the found files are stored). For example, you first search for "metaphi", then for "metafi":
+
+qtag metaphi -w
+qtag metafi -a
+
+and you get all the symlinks to the matching files in your working directory. (If several files have the same name, dots are added to the symlink names.)
+
+A more powerful, if more demanding, way for performing OR searches is by using regular expressions (regex). qtag makes extensive use of so-called "regular expressions" (regex). If you are familiar with them, you can introduce them after qtag and check their behaviour. (Browse the web for info about regex.) Some useful expressions:
+"[a-z]" stands for any single character in the range a-z (lower case); [A-Z],[a-zA-Z], [0-9] etc. are also ok. If you just write [am] you indicate a single
+character that is either "a" or "m".
+
+	qtag meta[pf]
+
+would do the trick. It would also find "metaphor", though. If you can live with it, it's ok. You can add -w
+
+	qtag meta[pf] -w
+
+and delete all the links you don't like. Or you could use the full power of regex (about escaped characters, see below *SPECIAL CHARACTERS*):
+
+	qtag metaphi\|metafi
+
+If the command interpreter you are using is picky, you might have to enclose the string between inverted commas, like this:
+
+	qtag "metaphi\|metafi"
+
+The expression above would find "metaphi" at the beginning of a word, and "metafi" anywhere. Say, you want to find all the docx OR pdf files in a directory or in the whole of your hard disk. Go to the directory you want to start your search from, open a terminal and type
+
+	qtag docx\|pdf
+
+This is ok almost always -- but a file "fffpdffff" would ALSO appear between the matches, because the expression after \| is searched throughout (not just at the beginning of a word). Perhaps you can put up with this. If you can't, you have to use the regex option for finding "pdf" only at the beginning of a word. This is "\b". However, a single backslash sign is interpreted as an escape character; therefore it must be escaped itself. The awkward string you come up with is "docx\|\\bpdf". These are not the normal uses for which qtag was made -- but if you enjoy this kind of stuff, please help yourself.
+
+
+*SPECIAL CHARACTERS*
+We have already met some examples of searches for tags that contain some "special characters", i.e. characters that have a special meaning within a regex (say, wildcards). For example, since a dot is interpreted as "any letter or digit", how do you write a tag containing an actual dot, such as "Python3.5"?
+If you just write:
+
+	qtag Python3.5
+
+qtag would find "Python3q5" etc. -- IF you have such filenames this is not what you want. To look for special characters as the dot, you have to 'escape' them, that is to write a backslash before them.
+
+	qtag Python3\.5			searches for "Python3.5"
+
+LIST of characters that ought to be escaped if you want to search for them as mere characters and not to use them as symbols with a special function:
+ 
+	 . ^ $ * + ? { } [ ] \ | ( )		and also "-" if it is at the beginning of a tag (otherwise the tag is interpreted as a command option)
+
+You are in fact allowed to introduce symbols that are active within the regexes used by qtag, if you just write them without escaping them. If you carelessly add, say, '+++' instead of '\+\+\+' as a tag, qtag tries to interpret your symbols with the meaning they have in a regex, which in this case would generate a regex error (a sequence of three plus signs is a syntax error in the regex 'language'). qtag assumes that, whenever a regex error is reported, you actually meant to introduce escaped special symbols but forgot to do so. Therefore, it intercepts the error, issues a warning ("Invalid REGEX detected: reinterpreting symbols as escaped: \+\+\+"), rewrites your tag escaping all special symbols and retries. If the result differs from your intentions, think again of your tag.
+To avoid such errors, we could easily change qtag so that it would literally interpret all the symbols appearing in the tags. This would make things easier when you search for simple tags. But in this way we would lose the possibility of using wildcards and regex symbols; or we should introduce an additional idiosyncratic symbolism before wildcard characters. We regarded this as too high a price to pay for the convenience of not escaping a symbol.
+
+ A general remark. Whenever you escape a special symbol, it is advisable to enclose the tag between quotes. This is because the escape symbol (backslash) is used by Python, by the regex symbolism and by the command line interpreter: conflicting or unintended interpretations may take place. Moreover, Python3 tries to fix the problem by reinterpreting escape symbols when it passes them to the regex compiler -- sometimes this helps, some other times things get a bit entangled.
+As a rule of thumb, start with the roughest string. If an escape does not work, try doubling it. Or try wrapping your tag between quotes. Eventually, try both. However, these are somehow limiting cases, which mainly arise when you are tryng to perform some peculiar tag additions or deletions. Luckily, we normally search for words or beginnings of words.  
+
+*TAGS AND EXTENDED SEARCH*
+Some more words on TAGS. Quite simply, a tag is the beginning of a word (or also, a whole word). Ok, but how do we detect the beginning of a new word? We assume a new word begins after: a space, a dot, a slash, an underscore, a digit... --- ALL of the special symbols listed above (you can't imagine the symbols people manage to fit into their file names -- unless YOU are the bad guy). A search for "rev" would also find such files as "qer?rev$+gh".  Of course you don't have to bother with writing down the separators, escaping them etc. This is qtag's job. You just write the tag and qtag looks for proper wrappers. By the way, IF you also write down the separators, qtag includes them in the word to be searched, and it only finds a match if it begins with one MORE separator.
+
+"qtag ari" also finds the tag "ari" in your file "MyLatestThoughtsOnAristotlesMetaphysics" (gosh). This is because of the capitals; a capital within a name is interpreted as if a separator were before it. It is a special case, and not everybody wishes for such tags to be found, therefore this search can be disabled with the option "-s" (SIMPLE).  If you do NOT set "-s", you ALSO search for tags that are buried in a name without any spaces, dots, slashes... BUT begin with a capital letter. We call them "EMBODIED" tags or words. qtag ALWAYS searches for them in case sensitive mode ("-c"), BUT a case insensitive search would obliterate the only markers we have for detecting them. Therefore, when search is case insensitive (as by default), qtag performs its (normal) case-insensitive search PLUS a case sensitive search for all the embodied tags that precisely match a tag like yours starting with an uppercase letter and lowercase in ALL the other letters.
+So, say you have these files:
+
+	PhilOfPython.pdf
+	Philosophy_of_Python.odt
+	Philosophy of Python.txt
+	python and C philosophy
+	programming philosophy in python.glob
+	Pythagoras_in_the_history_of_philosophical_thought.pdf
+	PhilosPythagor.doc
+
+qtag phil pyth 			finds all of them:
+
+*	PhilOfPython.pdf
+*	Philosophy_of_Python.odt
+*	Philosophy of Python.txt
+*	python and C philosophy
+*	programming philosophy in python.glob
+*	Pythagoras_in_the_history_of_philosophical_thought.pdf
+*	PhilosPythagor.doc
+
+qtag Phil Pyth -c 			      (that is, case sensitive and with extended search on by default: see OPTIONS below) finds:
+
+*	PhilOfPython.pdf
+*	Philosophy_of_Python.odt
+*	Philosophy of Python.txt
+	python and C philosophy
+	programming philosophy in python.glob
+	Pythagoras_in_the_history_of_philosophical_thought.pdf
+*	PhilosPythagor.doc
+
+but qtag phil pyth    -s		(that is, without extended search and case insensitive by default) would find:
+
+	PhilOfPython.pdf									it matches Phil but not Pyth (embodied)
+*	Philosophy_of_Python.odt
+*	Philosophy of Python.txt
+*	python and C philosophy
+*	programming philosophy in python.glob
+*	Pythagoras_in_the_history_of_philosophical_thought.pdf
+	PhilosPythagor.doc								again, Phil is ok but Pyth is buried in the word.
+
+
+As another rule of thumb, if search is case insensitive (as by default), don't think of it: qtag ALWAYS looks for embodied words and tags. If it is case-sensitive, cases in which you might be willing to disable extended search are fairly uncommon -- just keep to the default setting.
+
+
+
+*************
+* 3. Options *
+*************
+All the options can be written in any order after "qtag", even in between tags. They all start with a dash. You can also write all of your options after a single dash, like this: -cvsw. (That is, as far as versions A, B, C and subversions go. Future versions might allow different options for any tag.)
+
+-p  PATH followed by a space and a pathname. The pathname can be relative to the current position (pwd) or absolute, starting with the root sign ("/").
+
+	qtag -p Linux/My_Python_Progs
+
+       If you don't specify any path, the search starts by default from the current directory. You can also set "-p" together with other options in a single 
+       word, but the following argument must be the pathname. E.g. "qtag -cvps /home/me/Photos/ -w Natio Gallery  :Rubens" would be fine.
+-s   SIMPLE, that is, NON-EXTENDED search. Only effective in case-insensitive search. Search is limited to "non-embodied" tags.
+-c   CASE-SENSITIVE. By default, search is not case sensitive.
+-l    LOCAL (i.e. no recursion in subdirs). By default, search is recursive.
+-d  DIRECTORIES only (everything that is not a directory is discarded).
+-f   FILES only (directories are parsed but directories themselves do not appear as results).
+-v  FULL_NAME. qtag normally compares tags only with the base file name, without the path. In FULL_NAME mode it compares tags with the whole path;
+       if you search for "Nons" and you have a directory called "NONSENSE", the dir name matches the tag, so your query would match all the files in
+       the directory even if their base names don't match. (Why "-v" for "FULL_NAME"? Since "f" is already taken. A reminder for "v" might be "very long" or "verbose".)
+       Sometimes a comparison with the whole path is desirable. Say, you don't want to get the results from a certain directory that contains
+        many matching but irrelevant (to you) files.  You search for jpg but you don't want the matches from dirs "AUNTIE" and "DOGS". The right
+        command is: 		qtag    -v   jpg   :auntie   :dogs  
+-w  WRITE SYMLINKS  to all found files and dirs into a working directory  placed in home/<USER>/0qtag_results. Before exiting, the program has
+       the working directory opened by file manager. The dir is rewritten every time qtag is called with the option "-w".
+-a   APPEND or ADD. It behaves like -w but it ADDS to existing symlinks instead of rewriting from scratch.
+       The first time it is called, it creates the working dir if it's not already there.
+       -w and -a are incompatible: if both of them are set, the last one to appear on the command line wins.
+-x   makes qtag into a direct COMMAND by copying the python file into /home/<USER>/.local/bin/. In this way "qtag" can be directly entered at 
+       the command prompt. In order for this to work, /home/<USER>/.local/bin/ must be in the PATH
+       (check with "echo $PATH" in terminal). If it is not, there are some ways for adding a directory to your path, but the most convenient
+       way is to move the file /home/<USER>/.local/bin/qtag to a directory that is already in your path. If you move the file to a location
+       that is outside of the Home directory (such as "/usr/bin"), you need superuser privileges, and any change you make will affect all the
+       users of the system. Thus, you had better ask the system administrator -- who should have prevented you from making changes in the
+       shared system directories.
+       -x overrides all the other options and cancels them: after performing the copy, the program exits.
+-h   prints onscreen a very short help page. Like "-x", it cancels all the other options and exits.
+
+------------- These options are effective for tag SEARCH: some more options are available for managing (writing and removing) tags.
+
+
+
+
+********************
+* 4. Managing tags *
+********************
+W A R N I N G   --   T H E S E    O P T I O N S    C H A N G E    F I L E    N A M E S    O N    D I S K ! (but they work by default in virtual mode: use -r to actually change filenames on disk)
+
+The first step is to find some files and have qtag write symlinks to them in the working dir (qtag with -w option). Once you have the files in tour working dir, qtag gives you some tools for managing their tags.
+"-n" followed by one tag allows to INSERT OR DELETE TAGS in the files listed IN YOUR WORKING DIR (created with option "-w" or "-a").
+Since "-n ..." makes irreversible changes to file names, it runs by default in VIRTUAL MODE, merely printing onscreen the changes it would make.
+To run it in writing mode and make the changes actual, select the option: "-r" ("for REAL"). 
+"-n" MUST be followed by a tag; all other tags and options in the command line are ignored.
+
+	qtag -n media
+
+adds "media_" (note the trailing underscore) to the beginning of all the file names you have captured in your working dir (you captured them with previous commands using "-w" or "-a") UNLESS the tag "media" ("Media", "MEDIA", "mEDIa" etc.) is already there, not as a mere beginning of a word but as a whole word (therefore, "-n" behaves differently than searching options, which only deal with the beginning of a word).
+That is: qtag first tries to find your tag, AS A WHOLE WORD, in a file name. This means, it tries to find a tag "media" (or "MeDia" or...) that must have, on both ends, either the beginning or end of the filename or a space or underscore or dash or ... -- a separator. If it finds it is already there, it does nothing. The command above would NOT add "media_" to "media.mymovie", nor to "my_media_movie" but it WOULD add "media_" to "from_mediation_to_retaliation" (and of course to "immediate_actions"; note that the latter would not even be found by a search "qtag media") -- provided that they are in the group of names you have captured in the working directory with a previous search -w or -a. 
+The idea is: you capture a bunch of files, perhaps with a complex query, perhaps with a sequence of queries using "-a", and you like to tag them all with the same tag to find them more easily in the future -- or to recognize their category at a glance or... And so you tag them all -- except those that are already tagged.
+This may be useful if you are reorganizing your tagging system or if you are adding more tags.
+
+In the same frame of mind, you may wish to REMOVE some old tags that are either ambiguous or unsatisfactory for some reason.  Say, you want to have a single tag for all of your files concerning Melville. Assume your tagging is at present desperately chaotic: some file names are tagged "Melv", others "Melville", others "Mlv" -- and you also have "MDick", "MobyD" and "BCereno" tags. So, first of all you collect all your filenames (actually, links to them) in your working dir, by making repeated searches. You specify "-w" in your first search (so you are certain that the working dir, if already there and populated, will be rewritten from scratch) and "-a" in all the others. Right, so you have all your files in your working directory: home/<USER>/0qtag_results. (You need not remember this name.) The first thing now is to add a new tidy tag, such as "Melville".
+
+	qtag -n Melville
+
+adds "Melville_" at the beginning of all your files pointed to by the links in your working dir -- unless they already contain it.
+But you want to take away the bad tags too. Notice that, once you add a tag, qtag UPDATES the links in your working dir. (But in case anything should go wrong, you have a very handy way for rebuilding your working dir again: "qtag   melville   -w" would do the job.)
+Now you begin to take away the bad tags:
+
+	qtag -n    :Mlv
+	qtag -n    :Melv			(it removes a tag ONLY if it is a whole word; therefore it would not remove a "Melville" tag)
+	qtag -n    :MDick
+
+You can go on with "MobyD" and "BCereno" and "Bartleby" -- or, would you prefer not to? It's up to you: what mostly matters is that all the files have the common tag "Melville_".
+This allows you to perform some maintenance of your archives.
+Like its positive twin,
+
+	qtag -n :media
+
+only affects tags that are whole words, not just beginnings. This is an important difference from qtag's behaviour in searching mode and it is there for a reason: one normally wishes to leave a whole word within a file name in place even if one adds an abbreviation of it as a tag. If you are adding a tag "Beeth" you would NOT like that "Life of Beethoven" becomes "Beeth_Life of oven".
+---- So, what if you wish to add a tag that is identical to the whole word? You have a file named "Reflections of Melville about Native Americans -- Prior to That the Bisons". You just want to add a tag without removing "Melville". But "qtag -n Melville" would not add any tag because it would already find "Melville" in there. (By the way, this would be fine for most purposes: in search mode, "qtag Melville" would find it exactly as if it were "Melville_Reflections of Melville about Native Americans -- Prior to That the Bisons". But you can add, say, "Melville\." -- that is, "Melville.". Just remember the quotes, to prevent headaches.
+
+"qtag -n :media" also removes the separator (space, dash, etc.) that follows "media", if any. That is: if the removed tag is followed by a space, an underscore, etc., this is removed as well.
+(Generally speaking, trying to insert a space at the end of an added or removed tag is not a good idea. You can do so: you must enclose the tag between quotes, and qtag will search for a word that includes the ending space. However, remember that the word will be found only if there is a separator beyond the end of it -- and the space isn't such a separator any more, because it's part of the word now. In extended search, a capital letter would be fine; but even if the word+space is followed by an uppercase letter, the match is found only if it begins with a capital and all the inner characters are lowercase. So, everything works in such a command as: "qtag -n :Intr.*y" -- it would remove all the "Introduction to the Theory" it finds, regarded as a single word; but if you try 'qtag -n ":Intr.*y "' (there is a space after the 'y', it would NOT match with "Introduction to the Theory Of" (there is an uppercase letter in the 'word': "Theory"). It would match with "Introduction to the theory Of". No, putting a space at the end of a tag you are trying to add or remove is not a good idea -- esp. because qtag already removes a trailing space (if it is there) when it removes a tag and it already insertes an underscore when it adds one. Is an underscore ugly? Perhaps so -- it is so much safer, though. In a future version, I'll give the possibility of replacing the underscore with another symbol of your choice. You actually have that choice already, just go and tweak the Python code.) 
+An important similarity between -n (in adding and removing mode) and qtag searches is about embodied tags. If the option "-s" is NOT active, as in:
+
+	qtag -n   add
+	qtag -n   :remove -e
+
+qtag will take into account also embodied words starting with an uppercase letter and exactly identical to the tag. Let's see what happens to your file "ManyLivelySharks":
+
+	qtag -n   lively	  -s		becomes			lively_ManyLivelySharks			(the embodied "Lively" is not recognized as a tag)
+	qtag -n   lively   							ManyLivelySharks					("Lively" is recognized as already there and nothing is done)
+	qtag -n   :lively  -s							ManyLivelySharks					("Lively" not recognized)
+	qtag -n   :lively								ManySharks						(recognized...)
+
+(Remember that "-n" MUST BE immediately followed by a space and the tag to be added or removed. "qtag -n -e lively" would try to add "-e" and ignore "lively". Well, it fortunately runs in virtual mode until you add option "-r" -- after the tag or before "-n" but not in between them.)
+Say, you want to take away all of your embodied tags and replace them with well-behaving, honest tags (never too late for redemption). Presently, qtag does NOT have a way for looking ONLY for embodied words (an improvement for later versions? Or an unnecessary complication?). You have, say, 500 file names with an embodied "Lively", whose symlinks are already in your working dir.
+You begin by taking them away, since qtag keeps your links in your working dir updated and you are not in danger of losing the list.
+
+	qtag      -n     :lively
+
+Now you can add a proper "Lively":
+
+	qtag     -n      Lively
+
+which adds "Lively_" to the beginning of every file.
+When you are satisfied with the results printed on screen, you add "-r" -- just press the arrow up in the command line and go with:
+
+	qtag -n   :Lively  -r				(or: qtag   -n   :lively  ----- it's just the same, since you are removing)
+	qtag -n   Lively   -r				(if you write it lowercase, you also have a lowercase tag added)
+
+If you reverse the order of these commands and first add "Lively" then delete it, qtag would simply delete the instance of "Lively" you have just added.
+
+The only effective options you can add after a "-n TAG" option are "-c", "-s", "-r".
+
+In case you are making peculiar -n queries (esp. for lowercase embedded tags ) just remember:
+	in case insensitive mode (default) extended search for EMBEDDED tags only searches for tags STARTING with an uppercase letter.
+Therefore, there are unlikely cases in which extended search would find more matches in case sensitive than in case insensitive mode. Say, you search for "apricot" in ext. mode (default). And you have the filename "Man3apricotStop".
+The lowercase "apricot" is preceded and followed by two correct separators (a digit and an uppercase letter) but it is embedded and starts with a lowercase letter; it will NOT be found by a case insensitive search. A case sensitive query in ext mode will succeed.
+
+
+
+******************************************************************
+*5. MORE  REMARKS  ON   SYMLINKS  IN  THE  WORKING  DIRECTORY 	*
+******************************************************************
+You add or remove a tag. What happens if you change one of your filenames such in a way that it has the same name as an already existing file, in the same directory? Also: assume that, by removing the tag, nothing of your filename remains. This would generate an error; therefore QTAG  asks you what to do. It offers to add a standard leading tag to the target, that is to your real file that is affected by the renaming; in this way no conflicts would arise. You can accept qtag's proposal (type 'y', as the prompt tells you) or you can reject it and skip over the file without adding or removing any tag (type 'n'); or you can also write something that will be appended before the file name instead of an underscore. Qtag then checks again and keeps asking until the file has a univocal name. It's much curter with duplicate symlinks, where it just decides by itself -- it skips over actual duplicates and renames all links that just happen to have a basename already taken -- but symlinks are temporary stuff whereas qtag would not even dream of altering your precious file names without permission.  
+
+Question: qtag has added an underscore to one of my symlinks (_help.txt), but there is no underscore in the real filename (help.txt, i.e. in the target of the link). Now I remove a tag ("txt", or "\.txt", to remove the dot as well). Does my target name also get a leading underscore (_help), since its symlink has got one? Answer: no. All the adding and the removal are made on the real name of the target file and qtag only uses the symlink as a pointer to it. The best proof of this is the following: once the target name changes (tag is added or removed) the symlink is updated and it also loses the trailing underscore (unless, after the removal, it comes to have the same name as another symlink that is already there).
+
+Quite shortly: you need not worry about any of these. If qtag wants to add something to one of your real files in order to avoid conflicts, it asks you first. In all the other cases, only symlinks in the working dir are affected.
+
+
+
+********************************
+*6. EXAMPLES and PRACTICE	*
+********************************
+
+ADDING  AND  REMOVING  TAGS
+First, make a dir called "QtagTest" within your current directory. Then create some files in it:
+
+fil
+grob_pull
+Trial
+Trial0123
+
+You might put some text into the files (just to check that they are still the same after tinkering with them).
+We now want to search for all the files in QtagTest and place them (actually, symlinks to them) in the working dir. Find the solution before reading it at the bottom of the page. (1)
+Now we want to add the tag "Tagged" to all of them, first in virtual then in real mode. (2)(3)
+Try (2) again: qtag finds nothing to do. Why? (4)
+Now we want to remove "Tagged" as well as the trailing underscore. (5)
+You didn't use "-r", did you?  So, try "qtag   -n    :Tagged_"   (the underscore is NOT a 'special character', no need to escape it.). Why does it only find two of the files? Must be a bug! Or perhaps not. If you add "-s" it finds none! (6)
+Time to add option "-r" to (5). (7)
+Now add the tag "Tagged_again" (8)
+Now take away "again" (9).
+
+
+(1) qtag -pw QtagTest ---- Or: qtag -p   ./QtagTest -w. Or...
+(2) qtag  -n   Tagged
+(3) qtag  -nr  Tagged  ---- Or: qtag   -n   Tagged   -r
+(4) because "Tagged" is already there.
+(5) qtag -n    :Tagged
+(6) Not a bug. The TAG you wrote included "_", and qtag searches for a whole word in removing mode. In extended mode it is a word if you find a separator AFTER it. But now the underscore belongs to it, and so it is not after it. An uppercase letter is fine, a lowercase isn't.
+(7) qtag -nr  :Tagged
+(8) qtag -nr Tagged_again
+(9) qtag -nr  :again
