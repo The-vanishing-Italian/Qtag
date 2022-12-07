@@ -1,4 +1,5 @@
 # Bits
+I'd like to know what ypou think about the project
 Project: _qtag_ is a tool for quick tag searching, adding and deleting in file names. It can create a directory of symlinks to the found files and open it in the file manager, it can mass-change the filenames adding or removing tags etc.
 
 _qtag_ quickly searches between filenames and retrieves all the filenames that contain certain specified tags (i.e. word beginnings). A symbol ":" before a tag means that the tag is **not** searched for; filenames containing it are excluded. E.g.: "qtag Ari :pdf" finds "Aristotle.txt", "ILoveArithmetics.doc" etc., but not "Aristotle.pdf".
