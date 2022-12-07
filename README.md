@@ -1,2 +1,12 @@
 # Bits
-This is just to share a python program that quickly searches between filenames and retrieves all the filenames that contain certain specified tags. Links to the files are placed in a work directory that is opened with the default file manager. It is possible to make complex searches and to mass-change file names adding and deleting tags. More info in the file qtag.info.txt 
+Project: a python program that quickly searches between filenames and retrieves all the filenames that contain certain specified tags (i.e. word beginnings). A symbol ":" before a tag means that the tag is **not** searched for; filenames containing it are excluded. E.g.: "qtag Ari :pdf" finds "Aristotle.txt", "ILoveArithmetics.doc" etc., but not "Aristotle.pdf".
+
+Several options can be added, e.g. "-w" writes symlinks to the found files to a work directory and opens the default file manager, reproducing the directory tree: only the dir.s containing found file names are generated in the work directory. One can thus have a quick look at the found files.
+
+More options are added: non-recursive search, search only for files or for directories, case sensitive search, appending symlinks to files to the work directory etc.
+
+More options for tag management: adding, deleting or replacing tags in the files present in the work directory. Another option for writing to disk all the changes one makes to the symlink filenames in the working directory.
+
+The point is: it's much more handy than "find".
+
+The Python code I have written works but it can be improved in many ways and tested. The project can also be extended.
